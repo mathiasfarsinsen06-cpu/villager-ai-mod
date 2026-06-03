@@ -39,7 +39,7 @@ public class AIVillagesMod {
     private static int currentVillageIndex = 0;
     private static List<BlockPos> foundVillages = new ArrayList<>();
     private static boolean isSearching = false;
-    private static final String OLELA_API = "https://api.olela.me/v1/structures";
+    private static final String VILLAGE_API = "https://village-server-5io8.onrender.com/api/villages";
     private static final HttpClient httpClient = HttpClient.newHttpClient();
     private static final Gson gson = new Gson();
 
@@ -153,7 +153,7 @@ public class AIVillagesMod {
                                                     context.getSource().sendSuccess(
                                                             () -> Component.literal("📍 Position: " + village), false);
                                                     context.getSource().sendSuccess(
-                                                            () -> Component.literal("🏠 Source: OlelaFinder API"), false);
+                                                            () -> Component.literal("🏠 Source: Village Server API"), false);
                                                     return 1;
                                                 } catch (Exception e) {
                                                     LOGGER.error("Info command failed", e);
@@ -183,69 +183,50 @@ public class AIVillagesMod {
 
             LOGGER.info("🔍 Søger hele verden for byer med seed: {}", seed);
 
-            // Search hele verden - scan fra center og ud
-            int gridSize = 500; // Scan hver 500 blok
-            int searchDistance = 10000; // Søg 10km væk
-            int scanCount = 0;
-            int apiCalls = 0;
+            // Call Village Server API
+            String url = String.format("%s?seed=%d", VILLAGE_API, seed);
 
-            for (int gx = -searchDistance; gx <= searchDistance; gx += gridSize) {
-                for (int gz = -searchDistance; gz <= searchDistance; gz += gridSize) {
-                    int searchX = gx;
-                    int searchZ = gz;
+            try {
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(new URI(url))
+                        .GET()
+                        .timeout(java.time.Duration.ofSeconds(10))
+                        .build();
 
-                    scanCount++;
-                    apiCalls++;
+                HttpResponse<String> response = httpClient.send(request,
+                        HttpResponse.BodyHandlers.ofString());
 
-                    String url = String.format("%s?seed=%d&x=%d&z=%d&type=village",
-                            OLELA_API, seed, searchX, searchZ);
+                if (response.statusCode() == 200) {
+                    JsonObject jsonResponse = gson.fromJson(response.body(), JsonObject.class);
 
-                    try {
-                        HttpRequest request = HttpRequest.newBuilder()
-                                .uri(new URI(url))
-                                .GET()
-                                .timeout(java.time.Duration.ofSeconds(5))
-                                .build();
+                    if (jsonResponse.has("villages")) {
+                        JsonArray villagesArray = jsonResponse.getAsJsonArray("villages");
 
-                        HttpResponse<String> response = httpClient.send(request,
-                                HttpResponse.BodyHandlers.ofString());
+                        for (int i = 0; i < villagesArray.size(); i++) {
+                            JsonObject village = villagesArray.get(i).getAsJsonObject();
 
-                        if (response.statusCode() == 200) {
-                            JsonObject jsonResponse = gson.fromJson(response.body(), JsonObject.class);
+                            int x = village.get("x").getAsInt();
+                            int z = village.get("z").getAsInt();
 
-                            if (jsonResponse.has("structures")) {
-                                JsonArray structuresArray = jsonResponse.getAsJsonArray("structures");
+                            // Check if already added
+                            boolean exists = foundVillages.stream()
+                                    .anyMatch(v -> v.getX() == x && v.getZ() == z);
 
-                                for (int i = 0; i < structuresArray.size(); i++) {
-                                    JsonObject structure = structuresArray.get(i).getAsJsonObject();
+                            if (!exists) {
+                                BlockPos villagePos = new BlockPos(x, 64, z);
+                                foundVillages.add(villagePos);
 
-                                    int x = structure.get("x").getAsInt();
-                                    int z = structure.get("z").getAsInt();
-
-                                    // Check if already added
-                                    boolean exists = foundVillages.stream()
-                                            .anyMatch(v -> v.getX() == x && v.getZ() == z);
-
-                                    if (!exists) {
-                                        BlockPos villagePos = new BlockPos(x, 64, z);
-                                        foundVillages.add(villagePos);
-
-                                        LOGGER.info("✅ Found village at: {} {}", x, z);
-                                    }
-                                }
+                                LOGGER.info("✅ Found village at: {} {}", x, z);
                             }
-                        } else {
-                            LOGGER.debug("API returned status: {} for chunk {}, {}", response.statusCode(), searchX, searchZ);
                         }
-                    } catch (Exception e) {
-                        LOGGER.debug("Skipped chunk at {} {}: {}", searchX, searchZ, e.getMessage());
                     }
-
-                    // Rate limiting - small delay
-                    if (apiCalls % 10 == 0) {
-                        Thread.sleep(500);
-                    }
+                } else {
+                    LOGGER.error("API returned status: {}", response.statusCode());
+                    source.sendFailure(Component.literal("❌ API Fejl: Status " + response.statusCode()));
                 }
+            } catch (Exception e) {
+                LOGGER.error("API request failed: {}", e.getMessage());
+                source.sendFailure(Component.literal("❌ API Fejl: " + e.getMessage()));
             }
 
             // Sort by distance from player
@@ -279,7 +260,7 @@ public class AIVillagesMod {
                 }
             }
 
-            LOGGER.info("✅ Søgning færdig! Fandt {} byer (scannede {} chunks)", foundVillages.size(), scanCount);
+            LOGGER.info("✅ Søgning færdig! Fandt {} byer", foundVillages.size());
         } catch (Exception e) {
             LOGGER.error("Error searching for villages: {}", e.getMessage());
             e.printStackTrace();
