@@ -201,6 +201,7 @@ public class AIVillagesMod {
                         for (int i = 0; i < villagesArray.size(); i++) {
                             JsonObject village = villagesArray.get(i).getAsJsonObject();
                             if (!village.has("x") || !village.has("z")) {
+                                LOGGER.warn("Skipping malformed village entry at index {} without x/z", i);
                                 continue;
                             }
 
