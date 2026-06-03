@@ -20,7 +20,11 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -200,10 +204,6 @@ public class AIVillagesMod {
 
                         for (int i = 0; i < villagesArray.size(); i++) {
                             JsonObject village = villagesArray.get(i).getAsJsonObject();
-                            if (!village.has("x") || !village.has("z")) {
-                                LOGGER.warn("Skipping malformed village entry at index {} without x/z", i);
-                                continue;
-                            }
 
                             int x = village.get("x").getAsInt();
                             int z = village.get("z").getAsInt();
@@ -213,10 +213,12 @@ public class AIVillagesMod {
                                     .anyMatch(v -> v.getX() == x && v.getZ() == z);
 
                             if (!exists) {
-                                BlockPos villagePos = new BlockPos(x, 64, z);
+                                // ✅ FAST - Find the safe Y coordinate
+                                int safeY = findSafeY(level, x, z);
+                                BlockPos villagePos = new BlockPos(x, safeY, z);
                                 foundVillages.add(villagePos);
 
-                                LOGGER.info("✅ Found village at: {} {}", x, z);
+                                LOGGER.info("✅ Found village at: {} {} (Y: {})", x, z, safeY);
                             }
                         }
                     }
