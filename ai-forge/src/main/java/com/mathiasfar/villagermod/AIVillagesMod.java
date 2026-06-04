@@ -39,7 +39,7 @@ public class AIVillagesMod {
     private static int currentVillageIndex = 0;
     private static List<BlockPos> foundVillages = new ArrayList<>();
     private static boolean isSearching = false;
-    private static final String VILLAGE_API = "https://village-server-5io8.onrender.com/api/villages";
+    private static final String VILLAGE_API = "https://village-server-mathiasfarsinse.replit.dev/api/villages";
     private static final HttpClient httpClient = HttpClient.newHttpClient();
     private static final Gson gson = new Gson();
 
@@ -190,7 +190,7 @@ public class AIVillagesMod {
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(new URI(url))
                         .GET()
-                        .timeout(java.time.Duration.ofSeconds(10))
+                        .timeout(java.time.Duration.ofSeconds(60))
                         .build();
 
                 HttpResponse<String> response = httpClient.send(request,
@@ -205,8 +205,8 @@ public class AIVillagesMod {
                         for (int i = 0; i < villagesArray.size(); i++) {
                             JsonObject village = villagesArray.get(i).getAsJsonObject();
 
-                            int x = village.get("x").getAsInt();
-                            int z = village.get("z").getAsInt();
+                            int x = village.get("blockX").getAsInt();
+                            int z = village.get("blockZ").getAsInt();
 
                             // Check if already added
                             boolean exists = foundVillages.stream()
