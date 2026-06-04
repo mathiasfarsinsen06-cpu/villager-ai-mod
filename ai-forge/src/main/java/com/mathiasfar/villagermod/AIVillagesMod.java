@@ -219,6 +219,7 @@ public class AIVillagesMod {
                         JsonObject jsonResponse = gson.fromJson(response.body(), JsonObject.class);
                         LOGGER.info("✅ JSON parsed successfully");
 
+                        // API returns: { "seed": X, "villageCount": Y, "villages": [...], "algorithm": "..." }
                         if (jsonResponse.has("villages")) {
                             JsonArray villagesArray = jsonResponse.getAsJsonArray("villages");
                             LOGGER.info("🏘️ Found {} villages in API response", villagesArray.size());
@@ -244,6 +245,7 @@ public class AIVillagesMod {
                             }
                         } else {
                             LOGGER.warn("⚠️ 'villages' array not found in response");
+                            LOGGER.warn("Available keys: {}", jsonResponse.keySet());
                         }
                     } catch (com.google.gson.JsonSyntaxException jse) {
                         LOGGER.error("❌ JSON parsing failed - response is not valid JSON", jse);
