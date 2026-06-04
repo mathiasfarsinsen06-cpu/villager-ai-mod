@@ -39,7 +39,7 @@ public class AIVillagesMod {
     private static int currentVillageIndex = 0;
     private static List<BlockPos> foundVillages = new ArrayList<>();
     private static boolean isSearching = false;
-    private static final String VILLAGE_API = "https://village-server-mathiasfarsinse.replit.dev/api/villages";
+    private static final String VILLAGE_API = "http://localhost:8080/api/villages";
     private static final HttpClient httpClient = HttpClient.newHttpClient();
     private static final Gson gson = new Gson();
 
@@ -186,6 +186,7 @@ public class AIVillagesMod {
 
             // Call Village Server API
             String url = String.format("%s?seed=%d", VILLAGE_API, seed);
+            LOGGER.info("📡 Kalder API: {}", url);
 
             try {
                 HttpRequest request = HttpRequest.newBuilder()
@@ -194,14 +195,20 @@ public class AIVillagesMod {
                         .timeout(java.time.Duration.ofSeconds(60))
                         .build();
 
+                LOGGER.info("📤 Sender HTTP request...");
                 HttpResponse<String> response = httpClient.send(request,
                         HttpResponse.BodyHandlers.ofString());
 
+                LOGGER.info("📥 API respons status: {}", response.statusCode());
+                LOGGER.info("📥 API respons body længde: {} bytes", response.body().length());
+
                 if (response.statusCode() == 200) {
                     JsonObject jsonResponse = gson.fromJson(response.body(), JsonObject.class);
+                    LOGGER.info("✅ JSON parsed successfully");
 
                     if (jsonResponse.has("villages")) {
                         JsonArray villagesArray = jsonResponse.getAsJsonArray("villages");
+                        LOGGER.info("🏘️ Found {} villages in API response", villagesArray.size());
 
                         for (int i = 0; i < villagesArray.size(); i++) {
                             JsonObject village = villagesArray.get(i).getAsJsonObject();
@@ -222,14 +229,23 @@ public class AIVillagesMod {
                                 LOGGER.info("✅ Found village at: {} {} (Y: {})", x, z, safeY);
                             }
                         }
+                    } else {
+                        LOGGER.warn("⚠️ 'villages' array not found in response");
                     }
                 } else {
-                    LOGGER.error("API returned status: {}", response.statusCode());
+                    LOGGER.error("❌ API returned status: {}", response.statusCode());
                     source.sendFailure(Component.literal("❌ API Fejl: Status " + response.statusCode()));
                 }
+            } catch (java.net.ConnectException ce) {
+                LOGGER.error("❌ Connection failed - is server running on {}?", VILLAGE_API, ce);
+                source.sendFailure(Component.literal("❌ API Fejl: Kan ikke forbinde til " + VILLAGE_API));
             } catch (Exception e) {
-                LOGGER.error("API request failed: {}", e.getMessage());
-                source.sendFailure(Component.literal("❌ API Fejl: " + e.getMessage()));
+                LOGGER.error("❌ API request failed with exception: ", e);
+                LOGGER.error("Exception type: {}", e.getClass().getName());
+                LOGGER.error("Exception message: {}", e.getMessage());
+                e.printStackTrace();
+                String errorMsg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                source.sendFailure(Component.literal("❌ API Fejl: " + errorMsg));
             }
 
             // Sort by distance from player
@@ -265,7 +281,7 @@ public class AIVillagesMod {
 
             LOGGER.info("✅ Søgning færdig! Fandt {} byer", foundVillages.size());
         } catch (Exception e) {
-            LOGGER.error("Error searching for villages: {}", e.getMessage());
+            LOGGER.error("❌ Error searching for villages: {}", e.getMessage());
             e.printStackTrace();
             source.sendFailure(Component.literal("❌ Fejl: " + e.getMessage()));
         } finally {
