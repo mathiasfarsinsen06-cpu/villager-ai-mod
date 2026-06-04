@@ -8,7 +8,7 @@ public class VillageInfo {
     public int population;
     public double prosperity;
     public String leader;
-    public int distance; // Fra Warden
+    public int distance; // From Warden
 
     public VillageInfo(String name, int x, int z, int pop, double prosp, String leader) {
         this.name = name;
