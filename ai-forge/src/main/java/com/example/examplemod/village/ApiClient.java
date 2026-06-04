@@ -16,6 +16,8 @@ import java.util.List;
 public final class ApiClient {
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
     private static final String VILLAGE_API_TEMPLATE = "http://localhost:8080/api/villages?seed=%d";
+    private static final Duration API_TIMEOUT = Duration.ofSeconds(60);
+    private static final int RESPONSE_BODY_LOG_LIMIT = 300;
 
     private ApiClient() {
     }
@@ -23,13 +25,17 @@ public final class ApiClient {
     public static List<VillageData.Village> fetchVillages(long seed) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(String.format(VILLAGE_API_TEMPLATE, seed)))
-                .timeout(Duration.ofSeconds(60))
+                .timeout(API_TIMEOUT)
                 .GET()
                 .build();
 
         HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() != 200) {
-            throw new IOException("Village API returned status " + response.statusCode());
+            String responseBody = response.body();
+            if (responseBody != null && responseBody.length() > RESPONSE_BODY_LOG_LIMIT) {
+                responseBody = responseBody.substring(0, RESPONSE_BODY_LOG_LIMIT) + "...";
+            }
+            throw new IOException("Village API returned status " + response.statusCode() + " with body: " + responseBody);
         }
 
         JSONObject body = new JSONObject(response.body());
