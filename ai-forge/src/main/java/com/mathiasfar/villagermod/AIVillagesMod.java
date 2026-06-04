@@ -204,6 +204,10 @@ public class AIVillagesMod {
                 LOGGER.info("📥 API respons status: {}", response.statusCode());
                 LOGGER.info("📥 API respons body længde: {} bytes", response.body().length());
 
+                // Log first 500 chars of response
+                String bodyPreview = response.body().substring(0, Math.min(500, response.body().length()));
+                LOGGER.info("📥 API respons preview: {}", bodyPreview);
+
                 // Log redirect info if applicable
                 if (response.statusCode() >= 300 && response.statusCode() < 400) {
                     response.headers().firstValue("location")
@@ -211,34 +215,40 @@ public class AIVillagesMod {
                 }
 
                 if (response.statusCode() == 200) {
-                    JsonObject jsonResponse = gson.fromJson(response.body(), JsonObject.class);
-                    LOGGER.info("✅ JSON parsed successfully");
+                    try {
+                        JsonObject jsonResponse = gson.fromJson(response.body(), JsonObject.class);
+                        LOGGER.info("✅ JSON parsed successfully");
 
-                    if (jsonResponse.has("villages")) {
-                        JsonArray villagesArray = jsonResponse.getAsJsonArray("villages");
-                        LOGGER.info("🏘️ Found {} villages in API response", villagesArray.size());
+                        if (jsonResponse.has("villages")) {
+                            JsonArray villagesArray = jsonResponse.getAsJsonArray("villages");
+                            LOGGER.info("🏘️ Found {} villages in API response", villagesArray.size());
 
-                        for (int i = 0; i < villagesArray.size(); i++) {
-                            JsonObject village = villagesArray.get(i).getAsJsonObject();
+                            for (int i = 0; i < villagesArray.size(); i++) {
+                                JsonObject village = villagesArray.get(i).getAsJsonObject();
 
-                            int x = village.get("blockX").getAsInt();
-                            int z = village.get("blockZ").getAsInt();
+                                int x = village.get("blockX").getAsInt();
+                                int z = village.get("blockZ").getAsInt();
 
-                            // Check if already added
-                            boolean exists = foundVillages.stream()
-                                    .anyMatch(v -> v.getX() == x && v.getZ() == z);
+                                // Check if already added
+                                boolean exists = foundVillages.stream()
+                                        .anyMatch(v -> v.getX() == x && v.getZ() == z);
 
-                            if (!exists) {
-                                // ✅ FAST - Find the safe Y coordinate
-                                int safeY = findSafeY(level, x, z);
-                                BlockPos villagePos = new BlockPos(x, safeY, z);
-                                foundVillages.add(villagePos);
+                                if (!exists) {
+                                    // ✅ FAST - Find the safe Y coordinate
+                                    int safeY = findSafeY(level, x, z);
+                                    BlockPos villagePos = new BlockPos(x, safeY, z);
+                                    foundVillages.add(villagePos);
 
-                                LOGGER.info("✅ Found village at: {} {} (Y: {})", x, z, safeY);
+                                    LOGGER.info("✅ Found village at: {} {} (Y: {})", x, z, safeY);
+                                }
                             }
+                        } else {
+                            LOGGER.warn("⚠️ 'villages' array not found in response");
                         }
-                    } else {
-                        LOGGER.warn("⚠️ 'villages' array not found in response");
+                    } catch (com.google.gson.JsonSyntaxException jse) {
+                        LOGGER.error("❌ JSON parsing failed - response is not valid JSON", jse);
+                        LOGGER.error("Full response body: {}", response.body());
+                        source.sendFailure(Component.literal("❌ API Fejl: Invalid JSON response"));
                     }
                 } else {
                     LOGGER.error("❌ API returned status: {}", response.statusCode());
