@@ -39,7 +39,7 @@ public class AIVillagesMod {
     private static int currentVillageIndex = 0;
     private static List<BlockPos> foundVillages = new ArrayList<>();
     private static boolean isSearching = false;
-    private static final String VILLAGE_API = "http://localhost:8080/api/villages";
+    private static final String VILLAGE_API = "https://fictional-spoon-69q5vjprxjxp3rwq.github.dev/api/villages";
     private static final HttpClient httpClient = HttpClient.newHttpClient();
     private static final Gson gson = new Gson();
 
