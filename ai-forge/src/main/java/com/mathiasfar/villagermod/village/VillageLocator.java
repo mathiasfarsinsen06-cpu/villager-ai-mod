@@ -12,8 +12,8 @@ public class VillageLocator {
      * Find villages using Minecraft's deterministic village algorithm
      * Based on the Java Edition village generation algorithm
      */
-    public static List<VillageData> findAllVillages(long seed, int wardenX, int wardenZ) {
-        List<VillageData> villages = new ArrayList<>();
+    public static List<VillageInfo> findAllVillages(long seed, int wardenX, int wardenZ) {
+        List<VillageInfo> villages = new ArrayList<>();
 
         try {
             LOGGER.info("🔍 Finding villages using deterministic algorithm");
@@ -40,7 +40,7 @@ public class VillageLocator {
                                 .anyMatch(v -> Math.abs(v.x - villageX) < 32 && Math.abs(v.z - villageZ) < 32);
 
                         if (!exists) {
-                            VillageData village = new VillageData(
+                            VillageInfo village = new VillageInfo(
                                     "Village_" + (villages.size() + 1),
                                     villageX, villageZ,
                                     8 + (chunkRandom.nextInt(5)),

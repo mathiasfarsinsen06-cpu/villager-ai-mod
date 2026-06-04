@@ -1,4 +1,4 @@
-package com.example.examplemod.village;
+package com.mathiasfar.villagermod.village;
 
 import com.mathiasfar.villagermod.AIVillagesMod;
 import net.minecraft.network.chat.Component;

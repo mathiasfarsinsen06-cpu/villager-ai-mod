@@ -1,6 +1,6 @@
 package com.mathiasfar.villagermod.commands;
 
-import com.mathiasfar.villagermod.village.VillageData;
+import com.mathiasfar.villagermod.village.VillageInfo;
 import com.mathiasfar.villagermod.village.VillageLocator;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
@@ -16,7 +16,7 @@ import java.util.List;
 
 public class VillageCommand {
     private static final Logger LOGGER = LoggerFactory.getLogger("aivillages");
-    private static List<VillageData> cachedVillages = null;
+    private static List<VillageInfo> cachedVillages = null;
     private static int currentVillageIndex = 0;
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -45,7 +45,7 @@ public class VillageCommand {
             if (cachedVillages.isEmpty()) {
                 player.displayClientMessage(Component.literal("❌ Ingen byer fundet!"), false);
             } else {
-                for (VillageData v : cachedVillages) {
+                for (VillageInfo v : cachedVillages) {
                     player.displayClientMessage(Component.literal(v.toString()), false);
                 }
             }
@@ -71,7 +71,7 @@ public class VillageCommand {
                 return 0;
             }
 
-            VillageData village = cachedVillages.get(currentVillageIndex);
+            VillageInfo village = cachedVillages.get(currentVillageIndex);
             player.teleportTo((double) village.x, 64, (double) village.z);
 
             player.displayClientMessage(
@@ -94,7 +94,7 @@ public class VillageCommand {
                 return 0;
             }
 
-            VillageData village = cachedVillages.get(currentVillageIndex - 1);
+            VillageInfo village = cachedVillages.get(currentVillageIndex - 1);
 
             player.displayClientMessage(Component.literal("📍 " + village.name), false);
             player.displayClientMessage(Component.literal("👥 Population: " + village.population), false);

@@ -1,4 +1,4 @@
-package com.example.examplemod.village;
+package com.mathiasfar.villagermod.village;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
