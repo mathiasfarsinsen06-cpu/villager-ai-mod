@@ -40,7 +40,9 @@ public class AIVillagesMod {
     private static List<BlockPos> foundVillages = new ArrayList<>();
     private static boolean isSearching = false;
     private static final String VILLAGE_API = "https://fictional-spoon-69q5vjprxjxp3rwq.github.dev/api/villages";
-    private static final HttpClient httpClient = HttpClient.newHttpClient();
+    private static final HttpClient httpClient = HttpClient.newBuilder()
+            .followRedirects(HttpClient.Redirect.ALWAYS)
+            .build();
     private static final Gson gson = new Gson();
 
     public AIVillagesMod() {
@@ -201,6 +203,12 @@ public class AIVillagesMod {
 
                 LOGGER.info("📥 API respons status: {}", response.statusCode());
                 LOGGER.info("📥 API respons body længde: {} bytes", response.body().length());
+
+                // Log redirect info if applicable
+                if (response.statusCode() >= 300 && response.statusCode() < 400) {
+                    response.headers().firstValue("location")
+                            .ifPresent(location -> LOGGER.info("📍 Redirect location: {}", location));
+                }
 
                 if (response.statusCode() == 200) {
                     JsonObject jsonResponse = gson.fromJson(response.body(), JsonObject.class);
