@@ -45,7 +45,7 @@ public class AIVillagesMod {
 
     public AIVillagesMod() {
         LOGGER.info("AIVillages mod initializing...");
-        com.example.examplemod.village.ModEvents.register();
+        com.mathiasfar.villagermod.village.ModEvents.register();
     }
 
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
